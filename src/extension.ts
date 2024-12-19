@@ -1,30 +1,23 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
-import * as vscode from 'vscode';
+import {commands, ExtensionContext, Disposable, window }from 'vscode';
 
-// This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
-export function activate(context: vscode.ExtensionContext) {
+import { BoardCommand } from './commands/board.command';
+import { getLogTimestamp } from './utils/date';
+import { ProjectBoardProvider } from './providers/project-board.provider';
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "pmdev" is now active!');
+export function activate(context: ExtensionContext) {
+	console.log(`${getLogTimestamp()}: PMDEV is now active!`);
 
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
-	const disposable = vscode.commands.registerCommand('pmdev.helloWorld', async () => {
-		// The code you place here will be executed every time your command is executed
-		let input: string | undefined = await vscode.window.showInputBox({
-			placeHolder: "John Doe",
-			prompt: 'Who are yer?',
-			title: 'Identify Yourself  Mortal',
-		});
-		// Display a message box to the user
-		vscode.window.showInformationMessage(`Hello Sir ${input || 'stranger'}! The most dev dev of all time!`);
-	});
+	const storagePath = context.globalStorageUri.fsPath;
+	const projectBoardProvider: ProjectBoardProvider = new ProjectBoardProvider(storagePath);
+	window.registerTreeDataProvider('my-project-boards', projectBoardProvider);
 
-	context.subscriptions.push(disposable);
+	const addBoardDisposable : Disposable = commands.registerCommand('pmdev.addBoard', () => {BoardCommand.addBoard(storagePath, context);});
+	const refresh: Disposable = commands.registerCommand('pmdev.refresh', () => projectBoardProvider.refresh());
+
+	context.subscriptions.concat([
+		addBoardDisposable,
+		refresh,
+	]);
 }
 
 // This method is called when your extension is deactivated

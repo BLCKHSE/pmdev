@@ -2,8 +2,9 @@ out
 dist
 node_modules
 .vscode-test/
-.vscode/
 *.vsix
 
 .DS_STORE
+.vscode/notes.txt
 vsc-extension-quickstart.md
+.env

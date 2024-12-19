@@ -9,10 +9,11 @@
   "categories": [
     "Other"
   ],
+  "publisher": "BLKHSE",
   "activationEvents": [],
   "main": "./dist/extension.js",
   "contributes": {
-    "icons":{
+    "icons": {
       "pmdev-logo": {
         "description": "PMDEV Icon",
         "default": {
@@ -21,10 +22,26 @@
         }
       }
     },
+    "configuration": {
+      "title": "PMDEV",
+      "type": "object",
+      "properties": {
+        "pmdev.trello": {
+          "type": "object",
+          "properties": {
+            "token": {
+              "type": "string",
+              "default": "",
+              "description": "Trello API token"
+            }
+          }
+        }
+      }
+    },
     "commands": [
       {
-        "command": "pmdev.helloWorld",
-        "title": "Hello World",
+        "command": "pmdev.addBoard",
+        "title": "Add Project Board",
         "category": "PMDev"
       }
     ],
@@ -40,15 +57,19 @@
     "views": {
       "pmdev": [
         {
+          "id": "welcome",
+          "name": "WELCOME"
+        },
+        {
           "id": "my-project-boards",
-          "name": "MY PROJECT BOARDS"
+          "name": "My Project Boards"
         }
       ]
     },
     "viewsWelcome": [
       {
-        "view": "my-project-boards",
-        "contents": "Add your project board(s) and get started managing your tasks from within vscode.\n[ADD PROJECT BOARD](command:pmdev.helloWorld)"
+        "view": "welcome",
+        "contents": "Add your project board(s) and get started managing your tasks from within vscode.\n[ADD PROJECT BOARD](command:pmdev.addBoard)"
       }
     ]
   },
@@ -67,16 +88,18 @@
     "test": "vscode-test"
   },
   "devDependencies": {
-    "@types/vscode": "^1.95.0",
     "@types/mocha": "^10.0.9",
     "@types/node": "20.x",
+    "@types/vscode": "^1.95.0",
     "@typescript-eslint/eslint-plugin": "^8.10.0",
     "@typescript-eslint/parser": "^8.7.0",
-    "eslint": "^9.13.0",
-    "esbuild": "^0.24.0",
-    "npm-run-all": "^4.1.5",
-    "typescript": "^5.6.3",
     "@vscode/test-cli": "^0.0.10",
-    "@vscode/test-electron": "^2.4.1"
+    "@vscode/test-electron": "^2.4.1",
+    "eslint": "^9.13.0",
+    "npm-run-all": "^4.1.5",
+    "typescript": "^5.6.3"
+  },
+  "dependencies": {
+    "esbuild": "^0.24.0"
   }
 }
