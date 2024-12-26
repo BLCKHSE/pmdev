@@ -43,6 +43,11 @@
         "command": "pmdev.addBoard",
         "title": "Add Project Board",
         "category": "PMDev"
+      },
+      {
+        "command": "pmdev.open",
+        "title": "Open Project Board",
+        "category": "PMDev"
       }
     ],
     "viewsContainers": {

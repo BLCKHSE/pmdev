@@ -12,16 +12,18 @@ import { getLogTimestamp } from '../utils/date';
 
 
 /**
- * Project Board commands
+ * Project board commands
  */
 export class BoardCommand {
+
+    private static  _filenameTemplateSuffixLength = 12;
 
     /**
      * Adds project board
      * @param context ExtensionContext
      */
     static addBoard = async (storagePath: string,  context?: ExtensionContext) => {
-        console.log(`${getLogTimestamp()} :addBoard:i01[MSG]Add Board Initiated`);
+        console.log(`${getLogTimestamp()}: addBoard:i01[MSG]Add Board Initiated`);
         const platform: string | undefined = await window.showQuickPick([Platform.TRELLO,]);
         console.info(`addBoard:i02[MSG]${platform} selected`);
 
@@ -48,8 +50,9 @@ export class BoardCommand {
             board.organization = await platformProcessor.getOrganization(board?.organization?.id ?? '') ?? [];
         }
         // save boards to storage
-        const filePath: string = path.join(storagePath, `${platform?.toLocaleLowerCase()}-boards.json`);
-        const general: General = new General(boards, PlatformHelper.toPlatform(platform), member);
+        const key: string = platform?.toLocaleLowerCase() ?? Platform.TRELLO;
+        const filePath: string = path.join(storagePath, `${key}-boards.json`);
+        const general: General = new General(boards, PlatformHelper.toPlatform(platform), member, key);
         fs.writeFile(filePath, general.toString(), {flag: 'w'}, err => {
             if (err) {
                 console.error(`${getLogTimestamp()}: addBoard:e01[MSG]Failed to add project board data -> ${err}`);
@@ -58,7 +61,30 @@ export class BoardCommand {
                 window.showInformationMessage(`${platform} Project Board data successfully added!`);
             }
         });
-        // Add treeView of boards in activity panel
+        // TODO: Add treeView of boards in activity panel
+    };
+
+    static clearBoards = async (boardId?: string) => {
+        // TODO: IMplement clear board
+    };
+
+    /**
+     * Loads local boards
+     * @param storagePath 
+     * @returns 
+     */
+    static getBoardsLocal = async (storagePath: string): Promise<General[]> => {
+        let boards: General[] = [];
+        const files: string[] = fs.readdirSync(storagePath);
+        if (storagePath && files) {
+            for (const file of files) {
+                const general: General = JSON.parse(fs.readFileSync(`${storagePath}/${file}`, 'utf-8'));
+                const cacheKey: string = file.substring(0, file.length - BoardCommand._filenameTemplateSuffixLength);
+                general.key = cacheKey;
+                boards.push(general);
+            }
+        }
+        return boards;
     };
 
 }

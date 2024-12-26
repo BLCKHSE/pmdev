@@ -1,24 +1,30 @@
-import fs from 'fs';
-
 import {
     CancellationToken,
-    Event, EventEmitter,
+    Event,
+    EventEmitter,
     ProviderResult,
-    ThemeIcon,
     TreeDataProvider,
     TreeItem,
-    TreeItemCollapsibleState
+    TreeItemCollapsibleState,
+    Uri
 } from "vscode";
+
 import { General } from "../dtos/general.dto";
 import { getLastUpdated } from "../utils/date";
+import path from "path";
 
 export class ProjectBoardProvider implements TreeDataProvider<Dependency> {
 
     private _cachedBoards: { [key: string]: General } = {};
 
-    private _filenameTemplateSuffixLength = 12;
+    private boards?: General[] | null;
 
-    constructor(private storagePath: string) {}
+    private extensionPath?: string;
+
+    constructor(boards: General[], extensionPath: string) {
+        this.boards = boards;
+        this.extensionPath = extensionPath;
+    }
 
     private _onDidChangeTreeData: EventEmitter<Dependency | undefined | null | void> = new EventEmitter<Dependency | undefined | null | void>();
     
@@ -36,24 +42,23 @@ export class ProjectBoardProvider implements TreeDataProvider<Dependency> {
         if (element) {
             let boards: Dependency[] = [];
             boards = boards.concat(this._cachedBoards[element.id].boards.map(board => new Dependency(
-                `${board.name}[${board.cards?.length ?? 0} Tasks]`,
+                board.name,
                 TreeItemCollapsibleState.None,
+                this.extensionPath ?? '',
                 board.id,
                 board.lastActivityDate
             )));
             return boards;
         }
-        const files: string[] = fs.readdirSync(this.storagePath);
         let platforms: Dependency[] = [];
         
-        if (this.storagePath && files) {
-            for (const file of files) {
-                const general: General = JSON.parse(fs.readFileSync(`${this.storagePath}/${file}`, 'utf-8'));
-                const cacheKey: string = file.substring(0, file.length - this._filenameTemplateSuffixLength);
-                this._cachedBoards[cacheKey] = general;
-                platforms.push(new Dependency(cacheKey.toUpperCase(), TreeItemCollapsibleState.Collapsed, cacheKey, general.lastUpdated));
+        if (this.boards) {
+            for (const board of this.boards) {
+                this._cachedBoards[board.key] = board;
+                platforms.push(new Dependency(board.key.toUpperCase(), TreeItemCollapsibleState.Collapsed, this.extensionPath ?? '', board.key, board.lastUpdated));
             }
         }
+
         return platforms;
     }
 
@@ -72,6 +77,7 @@ class Dependency extends TreeItem {
     constructor(
         public readonly label: string,
         public readonly collapsibleState: TreeItemCollapsibleState,
+        public readonly extensionPath: string,
         public readonly id: string, 
         public readonly lastUpdated: Date
     ) {
@@ -79,8 +85,15 @@ class Dependency extends TreeItem {
         this.id = id;
         this.tooltip = this.label + ` - Updated ${getLastUpdated(lastUpdated)} ago`;
         if(collapsibleState === TreeItemCollapsibleState.None) {
-            this.iconPath = new ThemeIcon('combine');
-
+            this.iconPath = {
+                light: Uri.file(path.join(extensionPath, 'resources/icons', 'board-icon-light.svg')),
+                dark: Uri.file(path.join(extensionPath, 'resources/icons', 'board-icon-dark.svg')),
+            };
+            this.command = {
+                command: 'pmdev.open',
+                title: 'Load Project Board',
+                arguments: [id, label]
+            };
         }
     }
 

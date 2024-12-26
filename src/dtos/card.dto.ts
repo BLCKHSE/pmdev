@@ -14,6 +14,7 @@ export class Card {
     email?: string;
     id: string;
     idList?: string;
+    idMembers?: string[];
     name: string;
     pinned: boolean;
     position: number;
@@ -26,7 +27,9 @@ export class Card {
         this.dateLastActivity = card.dateLastActivity;
         this.description = card.desc;
         this.dueComplete = card.dueComplete;
-        this.id= card.id;
+        this.id = card.id;
+        this.idList = card.idList; 
+        this.idMembers = card.idMembers;
         this.name = card.name;
         this.pinned = card.pinned;
         this.start = card.start;

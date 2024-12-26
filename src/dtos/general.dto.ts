@@ -5,13 +5,15 @@ export class General {
 
     boards: Board[];
     creationDate: Date;
+    key: string;
     lastUpdated: Date;
     member: Member | null;
     platform: Platform;
 
-    constructor(bpards: Board[], platform: Platform, member: Member | null) {
+    constructor(bpards: Board[], platform: Platform, member: Member | null, key: string) {
         this.boards = bpards;
         this.creationDate = new Date();
+        this.key = key;
         this.lastUpdated = new Date();
         this.member = member;
         this.platform = platform;

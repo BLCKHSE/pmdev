@@ -10,7 +10,7 @@ export class Member {
 
     constructor(member: MembershipItem) {
         this.avatarUrl = member.avatarUrl;
-        this.id = member.idMember;
+        this.id = member?.id ?? member.idMember;
         this.lastActiveDate= member.dateLastActive;
         this.email = member.email;
         this.fullName = member.fullName;

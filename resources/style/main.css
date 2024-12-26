@@ -1,0 +1,90 @@
+/* :root {
+    --primary-theme: #ffe959;
+} */
+
+body {
+    width: 95%;
+    margin: 2em auto;
+    font-family: 'Courier New', monospace;
+
+    --primary-theme: #ffe959;
+    --secondary-theme-light: #fffdf2;
+    --secondary-theme-dark: #d9bc00;
+}
+
+section {
+    margin: 1em auto;
+}
+
+.badge {
+    padding: 2px 4px;
+    font-size: 0.5em;
+    text-align: center;
+}
+
+.accordion {
+    width: 100%;
+    background-color: inherit;
+    color: #fff;
+    cursor: pointer;
+    padding: 18px;
+    text-align: left;
+    outline: none;
+    transition: 0.4s;
+    margin: 0.5em auto;
+    border-radius: 8px;
+}
+
+.active, .accordion:hover {
+    background-color: var(--secondary-theme-dark);
+}
+
+.accordion:after {
+    content: '\025BC'; /* Unicode character for "plus" sign (+) */
+    font-size: 13px;
+    color: #fff;
+    float: right;
+    margin-left: 5px;
+}
+
+.active:after {
+    content: "\025B2"; /* Unicode character for "minus" sign (-) */
+}
+
+.board {
+    padding: 0 0.3em;
+    background-color: inherit;
+    max-height: 0;
+    overflow-x: auto;
+    transition: max-height 0.2s ease-out;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    gap: 1.5em;
+    font-family: sans-serif;
+    align-items: flex-start;
+}
+
+.board-list {
+    padding: 0.4rem;
+    width: 30.5%;
+    height: 100%;
+    min-width: 14rem;
+    min-height: 4.5rem;
+    margin-bottom: 2em;
+}
+
+.board-list-header {
+    position: sticky;
+    top: 0;
+    padding: 1em;
+    border-radius: 8px 8px 0 0;
+}
+
+.board-list-card {
+    padding: 1em;
+    border: 1px solid var(--secondary-theme-light);
+    border-radius: 8px;
+    margin: 1.4em auto;
+}
