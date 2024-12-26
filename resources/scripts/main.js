@@ -41,6 +41,7 @@ const PRIMARY_THEME_COLOR = '#ffe959';
 
 /** @type {HTMLElement | null} */
 const assignedBoard = document.getElementById('assigned-tasks-section');
+
 /** @type {HTMLElement | null} */
 const unassignedBoard = document.getElementById('unassigned-tasks-section');
 
@@ -114,10 +115,7 @@ const createBadgeElement = (
   badgeElement.style.color = color;
   badgeElement.style.borderRadius = circular ? '5em' : '0.5em';
   badgeElement.innerText = value;
-  return `
-    <span class="badge" style="border: 1px solid ${color}; color: ${color}; border-radius: ${circular ? '5em' : '0.5em'}">0</span>
-  `;
-  // return badgeElement;
+  return badgeElement;
 };
 
 /**
@@ -162,7 +160,7 @@ const createListElement = (
   header.classList.add('board-list-header');
   header.style.border = `2px solid ${colorCode}`;
   header.innerText = name.toUpperCase();
-  header.insertAdjacentHTML('beforeend', createBadgeElement('0', true, colorCode));
+  header.appendChild(createBadgeElement('0', true, colorCode));
   listElement.appendChild(header);
 
   return listElement;
