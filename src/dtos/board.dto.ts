@@ -2,6 +2,7 @@ import { Board as TrelloBoard } from '../dtos/trello.dto';
 import { Card } from './card.dto';
 import { List } from './list.dto';
 import { Organization } from './organization.dto';
+import { Tag } from './tag.dto';
 import { User } from './user.dto';
 
 /**
@@ -20,7 +21,7 @@ export class Board {
     name: string;
     organization?: Organization;
     pinned: boolean;
-    tags?: string[];
+    tags?: {[key: string]: Tag};
     url: string;
 
     constructor(board: TrelloBoard) {
@@ -51,9 +52,6 @@ export class PlatformHelper {
         let platformVal;
         platform = platform?.toUpperCase();
         switch (platform) {
-            case 'TRELLO':
-                platformVal = Platform.TRELLO;
-                break;
             case 'LOCAL':
                 platformVal = Platform.LOCAL;
                 break;

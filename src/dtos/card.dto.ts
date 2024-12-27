@@ -20,6 +20,7 @@ export class Card {
     position: number;
     start?: string;
     subscribed: boolean;
+    tags?: string[];
     url: string;
 
     constructor(card: TrelloCard) {
@@ -36,6 +37,7 @@ export class Card {
         this.position = card.pos;
         this.email = card.email;
         this.subscribed = card.subscribed;
+        this.tags = card.idLabels;
         this.url = card.url;
     }
 

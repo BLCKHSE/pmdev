@@ -22,6 +22,11 @@ section {
     text-align: center;
 }
 
+.tag {
+    margin: auto 0.3em;
+    border-color: var(--secondary-theme-dark);
+}
+
 .accordion {
     width: 100%;
     background-color: inherit;
@@ -87,4 +92,8 @@ section {
     border: 1px solid var(--secondary-theme-light);
     border-radius: 8px;
     margin: 1.4em auto;
+}
+
+.board-list-card-header {
+    margin-bottom: 0.5em;
 }

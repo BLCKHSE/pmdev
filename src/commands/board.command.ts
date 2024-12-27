@@ -9,6 +9,7 @@ import { Member } from '../dtos/member.dto';
 import { General } from '../dtos/general.dto';
 import { createStorageDirectory } from '../utils/file';
 import { getLogTimestamp } from '../utils/date';
+import { ProjectBoardProvider } from '../providers/project-board.provider';
 
 
 /**
@@ -47,6 +48,7 @@ export class BoardCommand {
         for (const board of boards) {
             board.lists = await platformProcessor.getLists(board.id) ?? [];
             board.cards = await platformProcessor.getCards(board.id) ?? [];
+            board.tags = await platformProcessor.getTags() ?? {};
             board.organization = await platformProcessor.getOrganization(board?.organization?.id ?? '') ?? [];
         }
         // save boards to storage
@@ -58,6 +60,7 @@ export class BoardCommand {
                 console.error(`${getLogTimestamp()}: addBoard:e01[MSG]Failed to add project board data -> ${err}`);
                 window.showErrorMessage(`Failed to add ${platform} Project Board data: ${err.message}`);
             } else {
+                window.createTreeView('my-project-boards', {treeDataProvider: new ProjectBoardProvider([general,], context?.extensionPath ?? '')});
                 window.showInformationMessage(`${platform} Project Board data successfully added!`);
             }
         });

@@ -29,6 +29,10 @@ const LIST_COLORS = [
   '#0d0b00',
 ];
 
+const PRIMARY_THEME_COLOR = '#ffe959';
+const SECONDARY_THEME_COLOR = '#d9bc00';
+
+
 /** @type {{unassigned: {[key: string]: {name: string, cards: object[]}}, assigned: {[key: string]: {name: string, cards: object[]}}}} */
 let boards = {
   unassigned: {},
@@ -37,14 +41,25 @@ let boards = {
 
 let member = null;
 
-const PRIMARY_THEME_COLOR = '#ffe959';
-
+/** @type {{[key: string]: {id: string, name: string, color: string}}} */
+let tags = {};
 /** @type {HTMLElement | null} */
 const assignedBoard = document.getElementById('assigned-tasks-section');
 
 /** @type {HTMLElement | null} */
 const unassignedBoard = document.getElementById('unassigned-tasks-section');
 
+/**
+ * Checks if a color value is supported
+ * @param {string} color 
+ * @returns 
+ */
+const _validateColor = (/** @type {string} */ color) => {
+  document.head.style.color = color;
+  const valid = !!document.head.style.color;
+  document.head.style.color = '';
+  return valid;
+};
 
 /**
  * Displays the board section
@@ -72,7 +87,6 @@ const addAccordionListeners = () => {
         accordionBtn.classList.toggle('active');
         /** @type {HTMLElement | null} */
         let panel = document.getElementById(accordionBtn.dataset.panel ?? '');
-        console.log('panel: ', panel);
         if (!panel) {
             return;
         }
@@ -92,6 +106,8 @@ const addMessageEventListener = () => {
       const boardMessage = e.data;
       /** @type {object} */
       member = boardMessage.member;
+      /** @type {{[key: string]: {id: string, name: string, color: string}}} */
+      tags = boardMessage.board.tags;
       handleBoardLoads(boardMessage.board);
   });
 };
@@ -101,6 +117,7 @@ const addMessageEventListener = () => {
  * @param {string} value 
  * @param {boolean} circular
  * @param {string} color
+ * @returns {HTMLElement}
  *
  */
 const createBadgeElement = (
@@ -108,6 +125,7 @@ const createBadgeElement = (
   /** @type {boolean} */ circular = false, 
   /** @type {string} */ color = PRIMARY_THEME_COLOR,
 ) => {
+  color = _validateColor(color) ? color : SECONDARY_THEME_COLOR;
   /** @type {HTMLSpanElement} */
   let badgeElement = document.createElement('span');
   badgeElement.classList.add('badge');
@@ -135,6 +153,21 @@ const createCardElement = (/** @type {object}*/ card, /** @type { string } */ co
   cardHeaderElement.classList.add('board-list-card-header');
   cardHeaderElement.innerText = card.name;
   cardElement.appendChild(cardHeaderElement);
+  if (card.tags) {
+    /** @type {HTMLElement} */
+    let tagsElement = document.createElement('div');
+    tagsElement.classList.add('tags');
+    for (const tagId of card.tags) {
+      const tag = tags[tagId];
+      if (!tag.name) {
+        continue;
+      }
+      const tagElement = createBadgeElement(tag.name.toUpperCase(), false, tag.color);
+      tagElement.classList.add('tag');
+      tagsElement.appendChild(tagElement);
+    }
+    cardElement.appendChild(tagsElement);
+  }
 
   return cardElement;
 };

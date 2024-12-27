@@ -4,9 +4,10 @@ import {
     Card as TrelloCard,
     List as TrelloList,
     Board as TrelloBoard,
-    Organization as TrelloOrganization,
     MembershipItem,
-    Token
+    Organization as TrelloOrganization,
+    Token,
+    LabelItem
 } from "../dtos/trello.dto";
 import { Board } from '../dtos/board.dto';
 import { List } from '../dtos/list.dto';
@@ -14,6 +15,7 @@ import { Card } from '../dtos/card.dto';
 import { Organization } from '../dtos/organization.dto';
 import { Member } from '../dtos/member.dto';
 import { getLogTimestamp } from '../utils/date';
+import { Tag } from '../dtos/tag.dto';
 
 export class Trello {
 
@@ -24,6 +26,8 @@ export class Trello {
     memberUri = '/tokens/{token}/member';
     memberId: string | undefined;
     organisationUri = '/organizations/{orgId}';
+    tagsUri = '/boards/:id/labels';
+    tags?: LabelItem[] = [];
     tokensUri = '/tokens/{token}';
     tokenKey = 'trello_token';
     token: string | undefined;
@@ -59,11 +63,49 @@ export class Trello {
                 console.error(`${getLogTimestamp()}: getCards:e01[MSG]Failed to fetch Trello board(${boardId}) lists -> ${e}`);
             });
         if (cards?.id) {
+            this.tags = (<TrelloCard>cards).labels;
             return [new Card(cards)];
         }
         return (<TrelloCard[]>cards)
             .filter(card => card.idMembers?.length === 0 || card.idMembers?.includes(this.memberId ?? ''))
-            .map(card => new Card(card)) ?? null;
+            .map(card => {
+                this.tags = this.tags?.concat(card.labels ?? []);
+                return new Card(card);
+            }) ?? null;
+    };
+
+    /**
+     * Fetches tags for a board either locally or from Trello API based
+     * If boardId provided it uses the external API)
+     * 
+     * NB: Clears this.tags class variable when called for local loads 
+     * @param boardId {string}
+     * @returns 
+     */
+    getTags = async (boardId: string | null = null): Promise<{[key: string]: Tag} | undefined> => {
+        let tagsObj: {[key: string]: Tag} = {};
+        if (!boardId) {
+            this.tags
+                ?.filter(tag => !tagsObj.hasOwnProperty(tag.id))
+                .forEach(tag => {
+                    console.log(tagsObj);
+                    tagsObj[tag.id] =  new Tag(tag.id, tag.name, tag.color);
+                });
+            this.tags = [];
+        } else {
+            const tagsUri = this.tagsUri.replace('\{boardId\}', boardId);
+            const url = `${this.baseUrl}${tagsUri}?key=${process.env.TRELLO_API_KEY}&token=${this.token}`;
+            const tags: any = await fetch(url)
+                .then(res => res.json())
+                .catch(e => {
+                    console.error(`${getLogTimestamp()}: getTags:e01[MSG]Failed to fetch Trello board(${boardId}) tags -> ${e}`);
+                });
+            if (tags?.id) {
+                return {[tags.id] : new Tag(tags.id, tags.name, tags.color),};
+            }
+            (<LabelItem[]>tags).forEach(tag => tagsObj[tag.id] = new Tag(tag.id, tag.name, tag.color));
+        }
+        return tagsObj;
     };
 
     /**
