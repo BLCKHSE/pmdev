@@ -8,10 +8,11 @@ import {
     Organization as TrelloOrganization,
     Token,
     LabelItem
-} from "../dtos/trello.dto";
+} from "../dtos/external/trello.dto";
 import { Board } from '../dtos/board.dto';
 import { List } from '../dtos/list.dto';
 import { Card } from '../dtos/card.dto';
+import { GeneralError } from '../dtos/error.dto';
 import { Organization } from '../dtos/organization.dto';
 import { Member } from '../dtos/member.dto';
 import { getLogTimestamp } from '../utils/date';
@@ -21,8 +22,9 @@ export class Trello {
 
     baseUrl = 'https://api.trello.com/1';
     boardsUri = '/members/me/boards';
-    cardsUri = '/boards/{boardId}/cards';
-    listsUri = '/boards/{boardId}/lists';
+    boardCardsUri = '/boards/{boardId}/cards';
+    boardListsUri = '/boards/{boardId}/lists';
+    cardsUri = '/cards/{cardId}';
     memberUri = '/tokens/{token}/member';
     memberId: string | undefined;
     organisationUri = '/organizations/{orgId}';
@@ -55,7 +57,7 @@ export class Trello {
      * @returns 
      */
     getCards = async (boardId: string, cardId?: string): Promise<Card[] | null> => {
-        const cardsUri = this.cardsUri.replace('\{boardId\}', boardId);
+        const cardsUri = this.boardCardsUri.replace('\{boardId\}', boardId);
         const url = `${this.baseUrl}${cardsUri}${!!cardId ? '/' + cardId : ''}?key=${process.env.TRELLO_API_KEY}&token=${this.token}`;
         const cards: any = await fetch(url)
             .then(res => res.json())
@@ -87,10 +89,7 @@ export class Trello {
         if (!boardId) {
             this.tags
                 ?.filter(tag => !tagsObj.hasOwnProperty(tag.id))
-                .forEach(tag => {
-                    console.log(tagsObj);
-                    tagsObj[tag.id] =  new Tag(tag.id, tag.name, tag.color);
-                });
+                .forEach(tag => tagsObj[tag.id] =  new Tag(tag.id, tag.name, tag.color));
             this.tags = [];
         } else {
             const tagsUri = this.tagsUri.replace('\{boardId\}', boardId);
@@ -116,7 +115,7 @@ export class Trello {
      * @returns 
      */
     getLists = async (boardId: string, listId?: string): Promise<List[] | null> => {
-        const listsUri = this.listsUri.replace('\{boardId\}', boardId);
+        const listsUri = this.boardListsUri.replace('\{boardId\}', boardId);
         const url = `${this.baseUrl}${listsUri}${!!listId ? '/' + listId : ''}?key=${process.env.TRELLO_API_KEY}&token=${this.token}`;
         const lists: any = await fetch(url)
             .then(res => res.json())
@@ -181,10 +180,32 @@ export class Trello {
                 title: 'Trello Token',
             });
             if (!!this.token) {
-                window.showInformationMessage('Trello token added successfully');
+                window.showInformationMessage('\u{1F953} Trello token added successfully');
             }
         }
         context?.secrets.store(this.tokenKey, this.token ?? '');
+    };
+
+    /**
+     * Updates Trello card
+     * @param card {Card}
+     * @returns {Promise<Card>}
+     */
+    updateCard = async (card: Card): Promise<Card | GeneralError> => {
+        const updateKeys: {[key: string]: string} = {name: 'name', description: 'desc', idList: 'idList', position: 'pos'};
+        const updateQuery = Object.entries(card)
+            .filter(entry => Object.values(updateKeys).includes(entry[0]) && entry[1] !== null )
+            .reduce((prev, entry) => prev + `${updateKeys[entry[0]]}=${entry[1]}`, '');
+        const cardsUri = this.cardsUri.replace('\{cardId\}', card.id);
+        const url = `${this.baseUrl}${cardsUri}?key=${process.env.TRELLO_API_KEY}&token=${this.token}&${updateQuery}`;
+        let success = true;
+        const res: any = await fetch(url, {method: 'PUT'})
+            .then(res => res.json())
+            .catch(e => {
+                success = false;
+                console.error(`${getLogTimestamp()}: updateCard:e01[MSG]Failed to update Trello card(${card.id}) -> ${e}`);
+            });
+        return success ? new Card(res) : new GeneralError(res);
     };
 
     /**

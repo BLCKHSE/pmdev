@@ -1,4 +1,4 @@
-import { MembershipItem } from "./trello.dto";
+import { MembershipItem } from "./external/trello.dto";
 
 export class Member {
     avatarUrl?: string;

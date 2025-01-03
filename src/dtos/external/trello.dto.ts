@@ -169,6 +169,11 @@ export type Card = {
     mirrorSourceId?: string
 };
 
+export type Error = {
+    message: string,
+    error: string,
+} ;
+
 export type LabelItem =  {
     id: string,
     idBoard: string,

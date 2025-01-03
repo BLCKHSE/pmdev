@@ -22,8 +22,8 @@ export const activate = async (context: ExtensionContext) => {
 
 	const webViewCommand = new WebViewCommand(context);
 
-	const addBoardDisposable : Disposable = commands.registerCommand('pmdev.addBoard', () => {BoardCommand.addBoard(storagePath, context);});
-	const  openWebViewPanel: Disposable = commands.registerCommand('pmdev.open', (boardId, title) => {webViewCommand.openWebViewPanel(boardId, title);});
+	const addBoardDisposable: Disposable = commands.registerCommand('pmdev.addBoard', () => {BoardCommand.addBoard(storagePath, context);});
+	const openWebViewPanel: Disposable = commands.registerCommand('pmdev.open', (boardId, title) => {webViewCommand.openWebViewPanel(boardId, title);});
 
 	context.subscriptions.concat([
 		addBoardDisposable,

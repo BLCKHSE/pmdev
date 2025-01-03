@@ -1,4 +1,4 @@
-import { Board as TrelloBoard } from '../dtos/trello.dto';
+import { Board as TrelloBoard } from './external/trello.dto';
 import { Card } from './card.dto';
 import { List } from './list.dto';
 import { Organization } from './organization.dto';

@@ -9,6 +9,9 @@ import { General } from "../dtos/general.dto";
 import { WebviewDTO } from '../dtos/webview.dto';
 import { Message } from '../dtos/webview-message.dto';
 import { Member } from '../dtos/member.dto';
+import { Card } from '../dtos/card.dto';
+import { Trello } from '../integrations/trello';
+import { GeneralError } from '../dtos/error.dto';
 
 /**
  * Webview panel commands
@@ -17,6 +20,7 @@ export class WebViewCommand {
 
     board: Board | undefined;
     activePanel?: WebviewPanel;
+    context?: ExtensionContext;
     extensionUri: Uri;
     extensionPath: string;
     member?: Member;
@@ -24,10 +28,11 @@ export class WebViewCommand {
 
     constructor(context: ExtensionContext, board?: Board, Member?: Member) {
         this.board = board;
+        this.context = context;
         this.extensionPath = context.extensionPath;
         this.extensionUri = context.extensionUri;
         this.member = this.member;
-        this.storagePath = context.globalStorageUri.fsPath;;
+        this.storagePath = context.globalStorageUri.fsPath;
     }
 
     /**
@@ -44,12 +49,30 @@ export class WebViewCommand {
     };
 
     /**
+     * Gets relevant platfrom processor for board
+     * @returns 
+     */
+    _getPlatformProcessor = async () => {
+        let platformProcessor;
+        switch (this.board?.platform) {
+            case Platform.TRELLO:
+                platformProcessor = new Trello();
+                break;
+            default:
+                platformProcessor = new Trello();
+                break;
+        }
+        await platformProcessor.loadCredentials(this.context);
+        return platformProcessor;
+    };
+
+    /**
      * Replaces html variables
      * @param html 
      * @param webview 
      * @returns 
      */
-    __processHtmlContent = (html: string, webview: WebviewDTO): string => {
+    _processHtmlContent = (html: string, webview: WebviewDTO): string => {
         if (!webview) {
             return html;
         }
@@ -58,6 +81,20 @@ export class WebViewCommand {
             html = html.replaceAll(`\{\{${key}\}\}`, value as string);
         }
         return html;
+    };
+
+    /**
+     * Handles webview messages
+     * @param message {Message}
+     */
+    handleWebViewMessage = (message: Message) => {
+        switch (message.type) {
+            case 'CARD_UPDATE':
+                this.processCardUpdate(message?.card);
+                break;
+            default:
+                break;
+        }
     };
 
     /**
@@ -100,7 +137,7 @@ export class WebViewCommand {
 		const scriptUri: Uri = this.activePanel.webview.asWebviewUri(Uri.joinPath(this.extensionUri, 'resources/scripts', 'main.js'));
 		const styleUri:Uri = this.activePanel.webview.asWebviewUri(Uri.joinPath(this.extensionUri, 'resources/style', 'main.css'));
         const htmlContent: string = fs.readFileSync(path.join(this.extensionPath, 'resources/html', 'index.html'), 'utf-8');
-        this.activePanel.webview.html = this.__processHtmlContent(
+        this.activePanel.webview.html = this._processHtmlContent(
             htmlContent,
             {
                 cspSource: this.activePanel.webview.cspSource,
@@ -111,10 +148,42 @@ export class WebViewCommand {
             }
         );
         this.activePanel.webview.postMessage(<Message>{
-            type: 'API_2_WEB',
+            type: 'BOARD_LOAD',
             board: this.board,
             member: this.member,
         });
+        this.activePanel.webview.onDidReceiveMessage((message: Message) => this.handleWebViewMessage(message));
+    };
+
+    processCardUpdate = async (card: Card | undefined) => {
+        console.log('update card message: ', card);
+        if (!card) {return;}
+        const platformProcessor = await this._getPlatformProcessor();
+        const res = await platformProcessor.updateCard(card);
+        console.log('res: ', res);
+        if (res instanceof GeneralError) {
+            window.showErrorMessage(`\u{1F954} Failed to update card: ${res.description}`);
+            this.activePanel?.webview.postMessage(<Message>{
+                type: 'CARD_UPDATE_RESP',
+                card: card,
+                error: res as GeneralError,
+            });
+        } else {
+            const cardId = card.id;
+            let general: General = await BoardCommand.getBoardsLocalByPlatform(this.storagePath, this.board?.platform ?? Platform.TRELLO);
+            if (this.board?.cards) {
+                const cardIndex = this.board?.cards?.findIndex(card => card.id === cardId);
+                if (cardIndex > 0) {
+                    console.log('card: ', card);
+                    this.board.cards[cardIndex] = res;
+                    const boardIndex = general.boards.findIndex(board => board.id === this.board?.id);
+                    boardIndex > 0 ? general.boards[boardIndex] = this.board : '';
+                }
+                console.log('gen:', general);
+                BoardCommand.saveBoard(this.context, path.join(this.storagePath, `${this.board.platform?.toLowerCase()}-boards.json`), general, true);
+            }
+            window.showInformationMessage(`\u{1F953} Successfully updated card: ${card.id}`);
+        }
     };
 
 }

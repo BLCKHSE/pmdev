@@ -1,4 +1,4 @@
-import { Card as TrelloCard } from './trello.dto';
+import { Card as TrelloCard } from './external/trello.dto';
 
 /**
  * General Card class

@@ -41,7 +41,7 @@ export class BoardCommand {
         };
         const boards: Board[] | null = await platformProcessor.getBoards();
         if (!boards) {
-            window.showErrorMessage(`Failed to fetch ${platform} boards, confirm you have valid credentials and access`);
+            window.showErrorMessage(`\u{1F954} Failed to fetch ${platform} boards, confirm you have valid credentials and access`);
             return;
         }
         // Get Lists & cards
@@ -53,22 +53,19 @@ export class BoardCommand {
         }
         // save boards to storage
         const key: string = platform?.toLocaleLowerCase() ?? Platform.TRELLO;
-        const filePath: string = path.join(storagePath, `${key}-boards.json`);
+        const filePath: string = path.join(storagePath, `${key.toLowerCase()}-boards.json`);
         const general: General = new General(boards, PlatformHelper.toPlatform(platform), member, key);
-        fs.writeFile(filePath, general.toString(), {flag: 'w'}, err => {
-            if (err) {
-                console.error(`${getLogTimestamp()}: addBoard:e01[MSG]Failed to add project board data -> ${err}`);
-                window.showErrorMessage(`Failed to add ${platform} Project Board data: ${err.message}`);
-            } else {
-                window.createTreeView('my-project-boards', {treeDataProvider: new ProjectBoardProvider([general,], context?.extensionPath ?? '')});
-                window.showInformationMessage(`${platform} Project Board data successfully added!`);
-            }
-        });
-        // TODO: Add treeView of boards in activity panel
+        this.saveBoard(context, filePath, general);
     };
 
     static clearBoards = async (boardId?: string) => {
         // TODO: IMplement clear board
+    };
+
+    static getBoardsLocalByPlatform = async (storagePath: string, platform: Platform): Promise<General> => {
+        const file =`${platform.toLowerCase()}-boards.json`;
+        const general: General = JSON.parse(fs.readFileSync(`${storagePath}/${file}`, 'utf-8'));
+        return general;
     };
 
     /**
@@ -88,6 +85,18 @@ export class BoardCommand {
             }
         }
         return boards;
+    };
+
+    static saveBoard = async (context: ExtensionContext | undefined, filePath: string, general: General, update: boolean = false) => {
+        fs.writeFile(filePath, JSON.stringify(general), {flag: 'w'}, err => {
+            if (err) {
+                console.error(`${getLogTimestamp()}: addBoard:e01[MSG]Failed to ${update ? 'update' : 'add'}  project board data -> ${err}`);
+                window.showErrorMessage(`\u{1F954} Failed to ${update ? 'update' : 'add'} ${general.platform} Project Board data: ${err.message}`);
+            } else {
+                window.createTreeView('my-project-boards', {treeDataProvider: new ProjectBoardProvider([general,], context?.extensionPath ?? '')});
+                window.showInformationMessage(`\u{1F953} ${general.platform} Project Board data successfully ${update ? 'updated' : 'added'}!`);
+            }
+        });
     };
 
 }
