@@ -27,6 +27,10 @@ section {
     border-color: var(--secondary-theme-dark);
 }
 
+.emoji-icon {
+    font-size: 1em;
+}
+
 .accordion {
     width: 100%;
     background-color: inherit;
@@ -95,6 +99,135 @@ section {
     margin: 1.4em auto;
 }
 
+.board-list-card :hover {
+    cursor: pointer;
+    border-color: 1pc solid var(--secondary-theme-light);
+}
+
 .board-list-card-header {
     margin-bottom: 0.5em;
+}
+
+/* CARD MODAL */
+.modal {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 1; /* Sit on top */
+    padding-top: 3em; /* Location of the box */
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%; 
+    overflow: auto; /* Enable scroll if needed */
+    color: #000;
+    background-color: rgb(0,0,0); /* Fallback color */
+    background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+}
+
+/* Modal Content */
+.card-modal-content {
+    position: relative;
+    padding: 1em 1.5em;
+    background-color: var(--secondary-theme-light);
+    border: 1px solid var(--secondary-theme-dark);
+    border-radius: 8px;
+    margin: auto;
+    border: 1px solid #888;
+    width: 75%;
+    min-height: 80%;
+    box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19);
+    -webkit-animation-name: animatetop;
+    -webkit-animation-duration: 0.4s;
+    animation-name: animatetop;
+    animation-duration: 0.4s
+}
+
+@-webkit-keyframes animatetop {
+    from {top:-300px; opacity:0} 
+    to {top:0; opacity:1}
+}
+
+@keyframes animatetop {
+    from {top:-300px; opacity:0}
+    to {top:0; opacity:1}
+}
+
+.card-modal-header {
+    padding: 0.3em;
+    border-bottom: 2px solid var(--secondary-theme-dark);
+    margin-bottom: 0.6em;
+}
+
+.card-modal-body {
+    padding: 0.8em 1.1em;
+}
+
+.card-tags {
+    padding: 0.8em 1.1em;
+    font-weight: 600;
+    font-size: 1.2em;
+}
+
+.card-description-header {
+    margin-top: 0.4em;
+}
+
+.card-description {
+    padding: 0.8em 1.1em;
+}
+
+.card-description-content {
+    border: 1px solid var(--secondary-theme-dark);
+    padding: 0.8em 1.1em;
+    line-height: 1.2;
+    font-family: 'montserrat', Verdana, sans-serif;
+    margin-bottom: 2em;
+}
+
+.card-comments {
+    padding: 0.8em 1.1em;
+}
+
+.comment {
+    display: flex;
+    gap: 1em;
+    font-family: 'montserrat', Verdana, sans-serif;
+}
+
+.comment-creator {
+    width: 5%;
+}
+
+.comment-creator >span {
+    margin: auto;
+    font-size: 1.5em;
+}
+
+.comment-container {
+    width: 95%;
+}
+
+.comment-metadata {
+    padding-top: 0.3em;
+    font-size: 0.5em;
+}
+
+.comment-text {
+    padding: 1em 1em;
+    border: 1px solid var(--secondary-theme-dark);
+    border-radius: 9px;
+    font-size: 0.8em;
+}
+
+.close {
+    color: var(--secondary-theme-dark);
+    float: right;
+    font-size: 2.7em;
+}
+
+.close:hover,
+.close:focus {
+    color: #000;
+    text-decoration: none;
+    cursor: pointer;
 }

@@ -12,6 +12,7 @@ import { Member } from '../dtos/member.dto';
 import { Card } from '../dtos/card.dto';
 import { Trello } from '../integrations/trello';
 import { GeneralError } from '../dtos/error.dto';
+import { Action } from '../dtos/action.dto';
 
 /**
  * Webview panel commands
@@ -84,6 +85,24 @@ export class WebViewCommand {
     };
 
     /**
+     * Get actions/history for a specified card. Can also include card comments for platforms like Trello
+     * @param idCard {string}
+     * @param filter {string}
+     */
+    getComments = async (idCard?: string, filter?: string) => {
+        let actions: Action[] = [];
+        if (idCard) {
+            const platformProcessor = await this._getPlatformProcessor();
+            filter = !filter && platformProcessor.platform === Platform.TRELLO ? 'commentCard' : filter;
+            actions = await platformProcessor.getActions(idCard, filter) ?? [];
+        }
+        this.activePanel?.webview.postMessage(<Message>{
+            type: 'GET_COMMENTS',
+            actions: actions
+        });
+    };
+
+    /**
      * Handles webview messages
      * @param message {Message}
      */
@@ -91,6 +110,9 @@ export class WebViewCommand {
         switch (message.type) {
             case 'CARD_UPDATE':
                 this.processCardUpdate(message?.card);
+                break;
+            case 'GET_COMMENTS':
+                this.getComments(message?.card?.id);
                 break;
             default:
                 break;
@@ -160,7 +182,6 @@ export class WebViewCommand {
         if (!card) {return;}
         const platformProcessor = await this._getPlatformProcessor();
         const res = await platformProcessor.updateCard(card);
-        console.log('res: ', res);
         if (res instanceof GeneralError) {
             window.showErrorMessage(`\u{1F954} Failed to update card: ${res.description}`);
             this.activePanel?.webview.postMessage(<Message>{
@@ -174,12 +195,10 @@ export class WebViewCommand {
             if (this.board?.cards) {
                 const cardIndex = this.board?.cards?.findIndex(card => card.id === cardId);
                 if (cardIndex > 0) {
-                    console.log('card: ', card);
                     this.board.cards[cardIndex] = res;
                     const boardIndex = general.boards.findIndex(board => board.id === this.board?.id);
                     boardIndex > 0 ? general.boards[boardIndex] = this.board : '';
                 }
-                console.log('gen:', general);
                 BoardCommand.saveBoard(this.context, path.join(this.storagePath, `${this.board.platform?.toLowerCase()}-boards.json`), general, true);
             }
             window.showInformationMessage(`\u{1F953} Successfully updated card: ${card.id}`);

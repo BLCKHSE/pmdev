@@ -1,6 +1,7 @@
 // @ts-check
 
 
+const CARD_MODAL_ID = 'card-modal';
 const ELEMENT_CLASSES =  {
   ACCORDION: 'accordion',
   BOARD: 'board',
@@ -36,16 +37,21 @@ const MESSAGE_TYPE = {
 const PRIMARY_THEME_COLOR = '#ffe959';
 /** @type {string} */
 const SECONDARY_THEME_COLOR = '#d9bc00';
+/** @type {string} */
+const SECONDARY_THEME_COLOR_LIGHT = '#fffdf2';
 
 /** @type {{unassigned: {[key: string]: {name: string, cards: object[]}}, assigned: {[key: string]: {name: string, cards: object[]}}}} */
 let boards = {
   unassigned: {},
   assigned: {},
 };
+let CommentsLoading = false;
 /** @type {{card: string | null, list: string | null}} */
 let drag = {card: null, list: null};
 /** @type {{id: string, avatarUrl: string | null, lastActiveDate: Date | null, email?: string | string, fullName: string | null, username: string | null} | null} */
 let member = null;
+/** @type {string[]} */
+let memberCommentColors = [];
 /** @type {number} */
 let minListLengthAssigned = 100, minListLengthUnassigned = 100; 
 /** @type {{[key: string]: {id: string, name: string, color: string}}} */
@@ -54,20 +60,35 @@ let tags = {};
 /** @type {HTMLElement | null} */
 const assignedBoard = document.getElementById('assigned-tasks-section');
 /** @type {HTMLElement | null} */
+const cardModal = document.getElementById('card-modal');
+/** @type {HTMLElement | null} */
 const unassignedBoard = document.getElementById('unassigned-tasks-section');
 // @ts-ignore
 const vscode = acquireVsCodeApi();
 
+
 /**
- * Checks if a color value is supported
- * @param {string} color 
+ * Extracts intials form string value
+ * @param {string} value 
  * @returns 
  */
-const _validateColor = (/** @type {string} */ color) => {
-  document.head.style.color = color;
-  const valid = !!document.head.style.color;
-  document.head.style.color = '';
-  return valid;
+const _getInitials = (/** @type {string} */ value) => {
+  return value?.split(' ').reduce((prev, entry) => prev + entry[0].toUpperCase(), '');
+};
+
+/**
+ * Gets color that corresponds to member
+ * @param {string} idMember 
+ * @returns 
+ */
+const _getMemberColor = (/** @type {string} */ idMember) => {
+  const index = memberCommentColors.indexOf(idMember);
+  if (index >= 0) {
+    return LIST_COLORS[index];
+  }
+  memberCommentColors.push(idMember);
+  const memberCommentColorsLen = memberCommentColors.length;
+  return LIST_COLORS[(memberCommentColorsLen === 0 ? 1 : memberCommentColorsLen) - 1];
 };
 
 /**
@@ -83,6 +104,18 @@ const _toggleBoard = (panel) => {
   } else {
       panel.style.maxHeight = panel.scrollHeight + "px";
   }
+};
+
+/**
+ * Checks if a color value is supported
+ * @param {string} color 
+ * @returns 
+ */
+const _validateColor = (/** @type {string} */ color) => {
+  document.head.style.color = color;
+  const valid = !!document.head.style.color;
+  document.head.style.color = '';
+  return valid;
 };
 
 /**
@@ -115,13 +148,30 @@ const addMessageEventListener = () => {
       const message = e.data;
       switch (message.type) {
         case 'CARD_UPDATE_RESP':
-          
           break;
         case 'BOARD_LOAD':
           handleBoardLoads(message);
           break;
+        case 'GET_COMMENTS':
+          handleCommentLoads(message);
+          break;
       }
   });
+};
+
+/**
+ * Appends tag elements to the provided html element container
+ * @param {HTMLElement} container 
+ * @param {string[]} tagIds 
+ */
+const addTags = (/** @type {HTMLElement} */ container, /** @type {string[]} */ tagIds) => {
+  for (const tagId of tagIds) {
+    const tag = tags[tagId];
+    if (!tag || !tag.name) {
+      continue;
+    }
+    container.appendChild(createTagElement(tag));
+  }
 };
 
 /**
@@ -136,6 +186,7 @@ const createBadgeElement = (
   /** @type {string} */ value,
   /** @type {boolean} */ circular = false, 
   /** @type {string} */ color = PRIMARY_THEME_COLOR,
+  /** @type {string} */ bgColor = ''
 ) => {
   color = _validateColor(color) ? color : SECONDARY_THEME_COLOR;
   /** @type {HTMLSpanElement} */
@@ -144,6 +195,9 @@ const createBadgeElement = (
   badgeElement.style.border = `1px solid ${color}`;
   badgeElement.style.color = color;
   badgeElement.style.borderRadius = circular ? '5em' : '0.5em';
+  if (bgColor && _validateColor(bgColor)) {
+    badgeElement.style.backgroundColor = bgColor;
+  }
   badgeElement.innerText = value;
   return badgeElement;
 };
@@ -161,6 +215,7 @@ const createCardElement = (/** @type {object}*/ card, /** @type { string } */ co
   cardElement.id = card.id;
   cardElement.draggable = true;
   cardElement.setAttribute('list-id', idList);
+  cardElement.onclick = e => handleCardSelect(e, card);
   cardElement.ondragleave = e => handleCardDragOverCardLeave(e, cardElement);
   cardElement.ondragover = e => handleCardDragOverCard(e, cardElement);
   cardElement.ondragstart = e => handleCardDrag(e, cardElement.id);
@@ -174,17 +229,36 @@ const createCardElement = (/** @type {object}*/ card, /** @type { string } */ co
     /** @type {HTMLElement} */
     let tagsElement = document.createElement('div');
     tagsElement.classList.add('tags');
-    for (const tagId of card.tags) {
-      const tag = tags[tagId];
-      if (!tag.name) {
-        continue;
-      }
-      tagsElement.appendChild(createTagElement(tag));
-    }
+    addTags(tagsElement, card.tags);
     cardElement.appendChild(tagsElement);
   }
 
   return cardElement;
+};
+
+const createCommentElement = (/** @type {object}*/ action) => {
+  const commentElement = document.createElement('div');
+  commentElement.classList.add('comment');
+  commentElement.id = action.id;
+  const creatorElement = document.createElement('div');
+  creatorElement.classList.add('comment-creator');
+  const creatorBadge = createBadgeElement(_getInitials(action.member.fullName), true, PRIMARY_THEME_COLOR, _getMemberColor(action.member.id));
+  creatorElement.appendChild(creatorBadge);
+  const commentContainerElement = document.createElement('div');
+  commentContainerElement.classList.add('comment-container');
+  const commentData = document.createElement('div');
+  commentData.classList.add('comment-metadata');
+  commentData.innerHTML = `By ${action.member.fullName} on ${new Date(action.date)}`;
+  const commentTextElement = document.createElement('div');
+  commentTextElement.classList.add('comment-text');
+  commentTextElement.innerHTML = action.text;
+  commentContainerElement.appendChild(commentTextElement);
+  commentContainerElement.appendChild(commentData);
+  commentElement.appendChild(creatorElement);
+  commentElement.appendChild(commentContainerElement);
+  console.log(commentElement);
+
+  return commentElement;
 };
 
 /**
@@ -217,6 +291,36 @@ const createListElement = (
   listElement.appendChild(header);
 
   return listElement;
+};
+
+const createModalElement = (/** @type {object} */ card) => {
+  if (!cardModal) {return;}
+  /** @type {HTMLElement | null} */
+  const modalHeader = cardModal?.querySelector('.card-modal-header >h1');
+  if (!!modalHeader) {
+    modalHeader.innerHTML = `<span class="emoji-icon">\u{2615}</span> ${card.name}`;
+    /** @type {HTMLElement | null} */
+    const modalCloseIcon = cardModal?.querySelector('.card-modal-header .close');
+    if (!!modalCloseIcon) {
+      modalCloseIcon.onclick = e => handleCardClose(e);
+    }
+    /** @type {HTMLElement | null} */
+    const tagsElement = cardModal?.querySelector('.card-modal-body .card-tags');
+    if (!!tagsElement) {
+      tagsElement.innerHTML = '';
+      addTags(tagsElement, card.tags);
+    }
+    /** @type {HTMLElement | null} */
+    const descriptionElement = cardModal?.querySelector('.card-modal-body .card-description .card-description-content');
+    if (!!descriptionElement) {
+      /** @type {string} */
+      let description = card.description;
+      description = description.replaceAll('\n', '<br>').replaceAll('\\-', '&middot;');
+      descriptionElement.innerHTML = description;
+    }
+    sendMessage('GET_COMMENTS', {card: {id: card.id}});
+
+  }
 };
 
 /**
@@ -276,6 +380,17 @@ const handleBoardLoads = (/** @type {object}*/ message) => {
   console.log('boards: ', boards);
   _toggleBoard(assignedBoard);
 
+};
+
+/**
+ * Handles card view/modal close
+ * @param {MouseEvent} event 
+ * @returns 
+ */
+const handleCardClose = (/** @type {MouseEvent} */ event) => {
+  event.preventDefault();
+  if (!cardModal) {return;}
+  cardModal.style.display = "none";
 };
 
 /**
@@ -377,6 +492,17 @@ const handleCardDrop = (/** @type {DragEvent} */ event, /** @type {HTMLElement} 
 };
 
 /**
+ * Processes card clicks
+ * @param {MouseEvent} event 
+ * @param {object} card 
+ */
+const handleCardSelect = (/** @type {MouseEvent} */ event, /** @type {object}*/ card) => {
+  if (!cardModal) {return;}
+  createModalElement(card);
+  cardModal.style.display = "block";
+};
+
+/**
  * Handles card update response
  * @param {object} message 
  */
@@ -403,6 +529,20 @@ const handleCardUpdate = (/** @type {object}*/ message) => {
   boards[boardType][destListElement.id.replace(/^(un)?assigned-/, '')] = cardObj;
 };
 
+const handleCommentLoads = (/** @type {object}*/ message) => {
+  if (message.error || !message?.actions) {
+    return;
+  }
+  const comments = message.actions;
+  /** @type {HTMLElement | null} */
+  const commentsSection = document.querySelector(`.card-comments-content`);
+  if (!commentsSection) { return; }
+  commentsSection.innerHTML = '';
+  for (const comment of comments) {
+    commentsSection.appendChild(createCommentElement(comment));
+  }
+};
+
 /**
  * Send messge to vscode api
  * @param {string} type 
@@ -427,6 +567,11 @@ const updateListLength = (/** @type {HTMLElement} */ list, /** @type {boolean} *
   document.querySelectorAll(`.${list.classList[0]}`)?.forEach(list => list['style'].minHeight = minListLength + 'px');
 };
 
+window.onclick = (/** @type {MouseEvent} */ event) => {
+  if (cardModal && event.target === cardModal) {
+    handleCardClose(event);
+  }
+};
 
 addMessageEventListener();
 addAccordionListeners();

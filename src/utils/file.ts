@@ -1,4 +1,5 @@
 import fsPromises from 'fs/promises';
+import { getLogTimestamp } from './date';
 
 /**
  * Ceeates the extension directory if it does not exist
@@ -9,9 +10,9 @@ export const createStorageDirectory = async (storagePath: string) => {
         await fsPromises.mkdir(storagePath);
     } catch (err) {
         if ((<Error>err).message.includes('EEXIST')) {
-            console.log(`createStorageDirectory:i01[MSG]Extension directory(${storagePath}) already exists`);
+            console.log(`${getLogTimestamp()}: createStorageDirectory:i01[MSG]Extension directory(${storagePath}) already exists`);
         } else {
-            console.error(`createStorageDirectory:e01[MSG]Failed to create extension directory -> ${err}`);
+            console.error(`${getLogTimestamp()}: createStorageDirectory:e01[MSG]Failed to create extension directory -> ${err}`);
         }
     }
 };

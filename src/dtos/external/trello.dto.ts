@@ -1,3 +1,5 @@
+import { ActionType } from "../action.dto";
+
 type AttachmentLabel = 'perBoard' | 'perCard';
 
 type BoardLabel = 'totalMembersPerBoard' | 'totalAccessRequestsPerBoard';
@@ -7,6 +9,57 @@ type CardLabel = 'openPerBoard' | 'openPerList' | 'totalPerBoard' | 'totalPerLis
 type Status = 'ok' | 'warning';
 
 type ViewType = 'Board' | 'Table' | 'Calendar' | 'Dashboard' | 'Timeline' | 'Map';
+
+export type Action = {
+    id: string,
+    idMemberCreator: string,
+    data: {
+        idCard: string,
+        text: string,
+        textData: {
+            emoji: {}
+        },
+        card: {
+            id: string,
+            name: string,
+            idShort: number,
+            shortLink: string
+        },
+        board: {
+            id: string,
+            name: string,
+            shortLink: string
+        },
+        list: {
+            id: string,
+            name: string
+        }
+    },
+    appCreator: any,
+    type: ActionType,
+    date: Date,
+    limits: {
+        reactions: {
+            [Property in keyof  "perAction" | "uniquePerAction"] : {
+                status: string,
+                disableAt: number,
+                warnAt: number
+            }
+        }
+    },
+    memberCreator: {
+        id: string,
+        activityBlocked: boolean,
+        avatarHash: string,
+        avatarUrl: string,
+        fullName: string,
+        idMemberReferrer: string,
+        initials: string,
+        nonPublic: {},
+        nonPublicAvailable: boolean,
+        username: string
+    }
+}
 
 export type Board = {
     id: string,
@@ -212,8 +265,8 @@ export type MembershipItem = {
     fullName?: string,
     id: string,
     idMember: string,
-    memberType: string,
-    unconfirmed: boolean,
+    memberType?: string,
+    unconfirmed?: boolean,
     username?: string,
     deactivated: boolean,
 };

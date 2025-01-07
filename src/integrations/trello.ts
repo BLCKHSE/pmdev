@@ -1,15 +1,16 @@
 import { ExtensionContext, window, workspace, WorkspaceConfiguration } from 'vscode';
 
 import {
+    Action as TrelloAction,
     Card as TrelloCard,
     List as TrelloList,
     Board as TrelloBoard,
     MembershipItem,
     Organization as TrelloOrganization,
     Token,
-    LabelItem
+    LabelItem,
 } from "../dtos/external/trello.dto";
-import { Board } from '../dtos/board.dto';
+import { Board, Platform } from '../dtos/board.dto';
 import { List } from '../dtos/list.dto';
 import { Card } from '../dtos/card.dto';
 import { GeneralError } from '../dtos/error.dto';
@@ -17,6 +18,7 @@ import { Organization } from '../dtos/organization.dto';
 import { Member } from '../dtos/member.dto';
 import { getLogTimestamp } from '../utils/date';
 import { Tag } from '../dtos/tag.dto';
+import { Action, ActionType } from '../dtos/action.dto';
 
 export class Trello {
 
@@ -25,14 +27,31 @@ export class Trello {
     boardCardsUri = '/boards/{boardId}/cards';
     boardListsUri = '/boards/{boardId}/lists';
     cardsUri = '/cards/{cardId}';
+    cardActionsUri = '/cards/{cardId}/actions';
     memberUri = '/tokens/{token}/member';
     memberId: string | undefined;
     organisationUri = '/organizations/{orgId}';
+    platform: Platform = Platform.TRELLO;
     tagsUri = '/boards/:id/labels';
     tags?: LabelItem[] = [];
     tokensUri = '/tokens/{token}';
     tokenKey = 'trello_token';
     token: string | undefined;
+
+    getActions = async (id: string, type?: ActionType | string): Promise<Action[]>  => {
+        const cardActionsUri = this.cardActionsUri.replace('\{cardId\}', id);
+        const filter: string = type ? `&filter=${type}` : '';
+        const url = `${this.baseUrl}${cardActionsUri}?key=${process.env.TRELLO_API_KEY}&token=${this.token}${filter}`;
+        console.log(url);
+        const actions: any = await fetch(url)
+            .then(res => res.json())
+            .catch(e => {
+                console.error(`${getLogTimestamp()}: getActions:e01[MSG]Failed to fetch Trello card(${id}) actions -> ${e}`);
+            });
+            console.log('actions: ', actions);
+
+        return (<TrelloAction[]>actions).map(action => new Action(action));
+    };
 
     /**
      * Get Trello boards related to user tied to stored token

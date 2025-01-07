@@ -6,6 +6,7 @@ import { Card as TrelloCard } from './external/trello.dto';
 export class Card {
 
     closed: boolean;
+    commentCount?: number;
     dueComplete: boolean;
     dateLastActivity?: string;
     description: string;
@@ -25,6 +26,7 @@ export class Card {
 
     constructor(card: TrelloCard) {
         this.closed = card.closed;
+        this.commentCount = card?.badges.comments;
         this.dateLastActivity = card.dateLastActivity;
         this.description = card.desc;
         this.dueComplete = card.dueComplete;

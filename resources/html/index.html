@@ -16,6 +16,32 @@
   <button class="accordion" data-panel="unassigned-tasks-section">UNASSIGNED</button>
   <section id="unassigned-tasks-section" class="board"></section>
 
+  <!-- Card Modal -->
+  <div id="card-modal" class="modal">
+    <!-- Modal content -->
+    <div class="card-modal-content">
+      <div class="card-modal-header">
+        <span class="close">&times;</span>
+        <h1>Modal Header</h1>
+      </div>
+      <div class="card-modal-body">
+        <div class="card-tags"></div>
+        <div class="card-description">
+          <h2 class="card-description-header"><span class="emoji-icon">&#x1F969;</span> Description</h2>
+          <div class="card-description-content empty">
+            No Description
+          </div>
+        </div>
+        <div class="card-comments">
+          <h2 class="card-comments-header"><span class="emoji-icon">&#x1F36B;</span> Comments</h2>
+          <div class="card-comments-content">
+            0 Comments
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script nonce="{{nonce}}" src="{{scriptUri}}"></script>
 </body>
 </html>
