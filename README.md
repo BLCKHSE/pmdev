@@ -1,8 +1,8 @@
 # pmdev README
 
-As a developer, why are you even leaving the editor?! Disgusting! PMDev brings all your project boards right into your VSCode editor. Ensuring you get to maintain your *Flow State*, without the possibility of distractions.
+As a developer, why are you even leaving the editor?! Disgusting! PMDev brings all your project boards right into your VSCode editor. Ensuring you get to maintain your *Flow State*, without the any distractions.
 
-No need to leave VSCode to view your tasks, or new comments left by team members. You can also move all the taskseasily change the status of your tasks viaa simple drag and drop interface
+No need to leave VSCode to view your tasks, or read new comments left by team members. You can also easily change the status of your tasks via a simple drag and drop interface
 
 ## Features
 
@@ -10,10 +10,13 @@ No need to leave VSCode to view your tasks, or new comments left by team members
     - Trello
 
 - View all your tasks + any unassigned tasks
-\!\[View all your project boards\]\(images/project-board-screenshot.png\)
+
+![View all your project boards](images/project-board-screenshot.png)
+
 
 - View cards/task details eg. description, comments, tags
-\!\[Expand individual cards for more details\]\(images/project-board-card-screenshot.png\)
+
+![Expand individual cards for more details](images/project-board-card-screenshot.png)
 
 - Update task status via easy to use drag and drop
 
